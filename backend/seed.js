@@ -1,4 +1,5 @@
 import pool from './src/config/database.js';
+import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 
@@ -7,6 +8,18 @@ const VIDEOS_PATH = 'C:\\Users\\danil\\Videos\\Captures';
 async function seedDatabase() {
   try {
     console.log('🌱 Iniciando seed de base de datos...\n');
+
+    // Resetear contraseñas de usuarios demo
+    console.log('🔐 Actualizando contraseñas de usuarios demo...');
+    const demoPassword = await bcrypt.hash('123456', 10);
+    
+    await pool.query(`
+      UPDATE users 
+      SET password_hash = $1 
+      WHERE email IN ('admin@elearning.com', 'teacher@elearning.com', 'student@elearning.com')
+    `, [demoPassword]);
+    
+    console.log('  ✅ Contraseñas actualizadas (password: 123456)\n');
 
     // Leer videos disponibles
     const videos = fs.readdirSync(VIDEOS_PATH).filter(f => f.endsWith('.mp4'));

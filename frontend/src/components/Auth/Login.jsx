@@ -123,7 +123,7 @@ const Login = () => {
               Estudiante: student@elearning.com
             </Typography>
             <Typography variant="caption" component="div" sx={{ mt: 1 }}>
-              <strong>Contraseña para todos:</strong> password123
+              <strong>Contraseña para todos:</strong> 123456
             </Typography>
           </Box>
         </Paper>
