@@ -307,8 +307,8 @@ npm run build
 
 ## 👨‍💻 Autor
 
-**Estudiante de Ingeniería de Sistemas**  
-Universidad Pontificia Bolivariana - UPB  
+**Daniel Lopez**  
+Universidad Privada Boliviana - UPB  
 Materia: Aplicaciones con Redes  
 Sexto Semestre - 2025
 
@@ -319,3 +319,4 @@ Este proyecto es de código abierto para fines educativos.
 ---
 
 ¿Preguntas? Revisa la [documentación completa](docs/INSTALACION.md) o crea un issue.
+
