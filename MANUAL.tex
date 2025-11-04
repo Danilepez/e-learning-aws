@@ -1,0 +1,1185 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{tikz}
+
+\geometry{margin=2.5cm}
+
+% Configuración de colores
+\definecolor{primaryblue}{RGB}{21,101,192}
+\definecolor{codegreen}{RGB}{0,128,0}
+\definecolor{codegray}{RGB}{128,128,128}
+\definecolor{codepurple}{RGB}{128,0,128}
+\definecolor{backcolour}{RGB}{245,245,245}
+
+% Configuración de código
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{primaryblue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=codestyle}
+
+% Configuración de enlaces
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    filecolor=primaryblue,      
+    urlcolor=primaryblue,
+    pdftitle={Manual Plataforma eLearning},
+    pdfpagemode=FullScreen,
+}
+
+% Encabezado y pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Plataforma eLearning}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+
+% Cajas informativas
+\newtcolorbox{infobox}[1]{
+  colback=blue!5!white,
+  colframe=primaryblue,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newtcolorbox{warningbox}[1]{
+  colback=orange!5!white,
+  colframe=orange!75!black,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newtcolorbox{successbox}[1]{
+  colback=green!5!white,
+  colframe=green!75!black,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\title{
+    \vspace{-2cm}
+    \Huge \textbf{Manual de Usuario y Configuración}\\
+    \LARGE Plataforma eLearning\\
+    \vspace{0.5cm}
+    \large Sistema de Gestión de Cursos en Línea
+}
+\author{Universidad Pontificia Bolivariana}
+\date{Noviembre 2025 - Versión 1.0}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{2cm}
+
+\begin{center}
+\begin{tcolorbox}[width=0.8\textwidth,colback=primaryblue!5!white,colframe=primaryblue,arc=5mm]
+\centering
+\large
+Este manual documenta la configuración, instalación y uso de la plataforma eLearning, un sistema completo de gestión de cursos en línea desplegado en AWS.
+\end{tcolorbox}
+\end{center}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ==========================================
+% PARTE 1: INTRODUCCIÓN
+% ==========================================
+
+\section{Introducción}
+
+\subsection{¿Qué es la Plataforma eLearning?}
+
+La Plataforma eLearning es un sistema web completo para la gestión y visualización de cursos en línea. Permite a profesores crear cursos con múltiples módulos de video, mientras que los estudiantes pueden inscribirse, ver los contenidos y realizar seguimiento de su progreso.
+
+\subsection{Características Principales}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Gestión de Cursos:} Los profesores pueden crear cursos y organizarlos en módulos
+    \item \textbf{Videos Interactivos:} Cada módulo contiene un video educativo con seguimiento de progreso
+    \item \textbf{Seguimiento Automático:} El sistema guarda automáticamente el progreso del estudiante
+    \item \textbf{Roles de Usuario:} Tres tipos de usuario (Administrador, Profesor, Estudiante)
+    \item \textbf{Streaming de Video:} Los videos se transmiten desde un servidor local mediante túnel seguro
+    \item \textbf{Interfaz Intuitiva:} Diseño moderno con Material-UI
+\end{itemize}
+
+\subsection{Tecnologías Utilizadas}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Componente} & \textbf{Tecnología} \\ \hline
+Frontend & React 18.2.0 + Vite 5.0.8 \\ \hline
+Backend & Node.js 18+ + Express 4.18.2 \\ \hline
+Base de Datos & PostgreSQL 14 (AWS RDS) \\ \hline
+Autenticación & JWT (JSON Web Tokens) \\ \hline
+Servidor de Videos & Express + Cloudflare Tunnel \\ \hline
+Infraestructura & AWS EC2 + RDS (us-east-2) \\ \hline
+Gestión de Procesos & PM2 \\ \hline
+Servidor Web & Nginx \\ \hline
+\end{tabular}
+\caption{Stack tecnológico de la plataforma}
+\end{table}
+
+% ==========================================
+% PARTE 2: ARQUITECTURA Y CONFIGURACIÓN
+% ==========================================
+
+\section{Arquitectura del Sistema}
+
+\subsection{Diagrama de Arquitectura}
+
+El sistema está compuesto por cuatro componentes principales:
+
+\begin{enumerate}
+    \item \textbf{Frontend (React):} Interfaz de usuario alojada en AWS EC2
+    \item \textbf{Backend (Node.js):} API REST alojada en AWS EC2
+    \item \textbf{Base de Datos (PostgreSQL):} AWS RDS en región us-east-2
+    \item \textbf{Servidor de Videos:} Servidor local con Cloudflare Tunnel
+\end{enumerate}
+
+\begin{infobox}{Arquitectura Cliente-Servidor}
+El frontend se comunica con el backend mediante peticiones HTTP REST. El backend gestiona la lógica de negocio y se conecta a PostgreSQL para persistir los datos. Los videos se transmiten desde un servidor local a través de Cloudflare Tunnel, proporcionando acceso seguro mediante HTTPS.
+\end{infobox}
+
+\subsection{Configuración de AWS EC2}
+
+\subsubsection{Especificaciones de la Instancia}
+
+La plataforma está desplegada en una instancia EC2 con las siguientes características:
+
+\begin{itemize}
+    \item \textbf{Tipo de Instancia:} t2.small (2 vCPU, 2 GB RAM)
+    \item \textbf{Sistema Operativo:} Ubuntu Server 22.04 LTS
+    \item \textbf{Región:} us-east-2 (Ohio)
+    \item \textbf{Almacenamiento:} 20 GB SSD (gp3)
+    \item \textbf{IP Elástica:} 3.133.208.222
+    \item \textbf{URL de Acceso:} http://3.133.208.222
+\end{itemize}
+
+\subsubsection{Grupos de Seguridad Configurados}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Puerto} & \textbf{Protocolo} & \textbf{Origen} & \textbf{Propósito} \\ \hline
+22 & TCP & 0.0.0.0/0 & SSH (Administración) \\ \hline
+80 & TCP & 0.0.0.0/0 & HTTP (Redirección) \\ \hline
+443 & TCP & 0.0.0.0/0 & HTTPS (Aplicación) \\ \hline
+5000 & TCP & 0.0.0.0/0 & Backend API \\ \hline
+\end{tabular}
+\caption{Puertos abiertos en el firewall de EC2}
+\end{table}
+
+\subsection{Configuración de AWS RDS}
+
+\subsubsection{Especificaciones de la Base de Datos}
+
+\begin{itemize}
+    \item \textbf{Motor:} PostgreSQL 14.x
+    \item \textbf{Tipo de Instancia:} db.t3.micro (2 vCPU, 1 GB RAM)
+    \item \textbf{Almacenamiento:} 20 GB SSD
+    \item \textbf{Región:} us-east-2 (Ohio)
+    \item \textbf{Nombre de Base de Datos:} elearning-dani-db
+    \item \textbf{Puerto:} 5432
+    \item \textbf{Acceso Público:} Sí (con restricciones de seguridad)
+    \item \textbf{Cifrado:} SSL/TLS habilitado
+\end{itemize}
+
+\subsubsection{Esquema de Base de Datos}
+
+La base de datos consta de las siguientes tablas principales:
+
+\begin{lstlisting}[language=SQL, caption=Estructura de la base de datos]
+-- Tabla de usuarios
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) CHECK (role IN ('admin', 'teacher', 'student')),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabla de cursos
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    teacher_id INTEGER REFERENCES users(id),
+    thumbnail_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabla de módulos
+CREATE TABLE modules (
+    id SERIAL PRIMARY KEY,
+    course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    video_filename VARCHAR(255) NOT NULL,
+    duration INTEGER DEFAULT 0,
+    order_index INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabla de inscripciones
+CREATE TABLE enrollments (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES users(id),
+    course_id INTEGER REFERENCES courses(id),
+    enrolled_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(student_id, course_id)
+);
+
+-- Tabla de progreso
+CREATE TABLE progress (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES users(id),
+    module_id INTEGER REFERENCES modules(id),
+    watched_seconds INTEGER DEFAULT 0,
+    completed BOOLEAN DEFAULT FALSE,
+    last_position INTEGER DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(student_id, module_id)
+);
+\end{lstlisting}
+
+\subsection{Configuración del Servidor de Videos}
+
+El servidor de videos funciona de manera local y se expone mediante Cloudflare Tunnel:
+
+\begin{itemize}
+    \item \textbf{Puerto Local:} 8080
+    \item \textbf{Ruta de Videos:} C:\textbackslash Users\textbackslash danil\textbackslash Videos\textbackslash Captures
+    \item \textbf{Túnel:} Cloudflare Tunnel con HTTPS
+    \item \textbf{Formato de Videos:} MP4
+    \item \textbf{Streaming:} Transmisión por fragmentos (chunked transfer)
+\end{itemize}
+
+\begin{infobox}{¿Por qué Cloudflare Tunnel?}
+Cloudflare Tunnel permite exponer el servidor de videos local a internet de forma segura sin abrir puertos en el router. Proporciona HTTPS automático y protección DDoS, manteniendo los videos en el servidor local sin necesidad de subirlos a la nube.
+\end{infobox}
+
+\subsection{Gestión de Procesos con PM2}
+
+El backend se ejecuta mediante PM2, un gestor de procesos para Node.js:
+
+\begin{lstlisting}[language=bash, caption=Comandos de PM2]
+# Iniciar el backend
+pm2 start src/server.js --name backend
+
+# Ver el estado
+pm2 status
+
+# Ver logs en tiempo real
+pm2 logs backend
+
+# Reiniciar el servicio
+pm2 restart backend
+
+# Detener el servicio
+pm2 stop backend
+
+# Configurar inicio automático
+pm2 startup
+pm2 save
+\end{lstlisting}
+
+\subsection{Configuración de Nginx}
+
+Nginx actúa como servidor web y proxy inverso:
+
+\begin{lstlisting}[caption=Configuración de Nginx]
+server {
+    listen 80;
+    server_name 3.133.208.222;
+
+    # Servir archivos estáticos del frontend
+    location / {
+        root /home/ubuntu/plataforma-elearning/frontend/dist;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy al backend
+    location /api/ {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+\end{lstlisting}
+
+% ==========================================
+% PARTE 3: GUÍA DE USO
+% ==========================================
+
+\section{Guía de Uso por Rol}
+
+\subsection{Acceso al Sistema}
+
+\subsubsection{Credenciales de Prueba}
+
+El sistema incluye tres usuarios de demostración:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Rol} & \textbf{Email} & \textbf{Contraseña} \\ \hline
+Estudiante & student@elearning.com & 123456 \\ \hline
+Profesor & teacher@elearning.com & 123456 \\ \hline
+Administrador & admin@elearning.com & 123456 \\ \hline
+\end{tabular}
+\caption{Usuarios de demostración}
+\end{table}
+
+\begin{warningbox}{Importante}
+En un ambiente de producción, estas contraseñas deben ser cambiadas inmediatamente después del primer acceso.
+\end{warningbox}
+
+\subsubsection{Inicio de Sesión}
+
+\begin{enumerate}
+    \item Acceder a la URL de la plataforma: \texttt{http://3.133.208.222}
+    \item Ingresar el email y contraseña
+    \item Hacer clic en ``Iniciar Sesión''
+    \item El sistema redirige automáticamente según el rol:
+    \begin{itemize}
+        \item Estudiante → \texttt{/student/cursos}
+        \item Profesor → \texttt{/teacher/cursos}
+        \item Administrador → \texttt{/admin/usuarios}
+    \end{itemize}
+\end{enumerate}
+
+\begin{infobox}{URL de Acceso}
+La plataforma está disponible públicamente en: \textbf{http://3.133.208.222}
+\end{infobox}
+
+\subsection{Rol: Administrador}
+
+El administrador tiene control total sobre el sistema y puede gestionar usuarios.
+
+\subsubsection{Gestionar Usuarios}
+
+\paragraph{Ver Lista de Usuarios}
+
+\begin{enumerate}
+    \item Iniciar sesión como administrador
+    \item La vista principal muestra todos los usuarios del sistema
+    \item Se puede filtrar por rol usando el selector
+    \item La tabla muestra: ID, Nombre, Email, Rol y Fecha de creación
+\end{enumerate}
+
+\paragraph{Crear Nuevo Usuario}
+
+\begin{enumerate}
+    \item Hacer clic en el botón ``Crear Usuario''
+    \item Completar el formulario:
+    \begin{itemize}
+        \item \textbf{Nombre Completo:} Nombre y apellido del usuario
+        \item \textbf{Email:} Dirección de correo electrónico (debe ser única)
+        \item \textbf{Contraseña:} Mínimo 6 caracteres
+        \item \textbf{Rol:} Seleccionar entre Admin, Profesor o Estudiante
+    \end{itemize}
+    \item Hacer clic en ``Crear''
+    \item El sistema muestra un mensaje de confirmación
+\end{enumerate}
+
+\begin{infobox}{Nota sobre Roles}
+\begin{itemize}
+    \item \textbf{Admin:} Puede gestionar usuarios
+    \item \textbf{Profesor:} Puede crear y gestionar cursos
+    \item \textbf{Estudiante:} Puede inscribirse y ver cursos
+\end{itemize}
+\end{infobox}
+
+\paragraph{Editar Usuario Existente}
+
+\begin{enumerate}
+    \item Localizar el usuario en la lista
+    \item Hacer clic en el icono de editar (lápiz)
+    \item Modificar los campos deseados:
+    \begin{itemize}
+        \item Nombre
+        \item Email
+        \item Rol
+        \item Contraseña (opcional, dejar vacío para mantener la actual)
+    \end{itemize}
+    \item Hacer clic en ``Guardar Cambios''
+\end{enumerate}
+
+\paragraph{Eliminar Usuario}
+
+\begin{enumerate}
+    \item Localizar el usuario en la lista
+    \item Hacer clic en el icono de eliminar (papelera)
+    \item Confirmar la acción en el diálogo de confirmación
+    \item El usuario es eliminado permanentemente
+\end{enumerate}
+
+\begin{warningbox}{Precaución}
+Eliminar un usuario es una acción irreversible. Si el usuario es profesor, también se eliminarán todos sus cursos asociados.
+\end{warningbox}
+
+\subsection{Rol: Profesor}
+
+Los profesores pueden crear cursos, agregar módulos y gestionar contenido educativo.
+
+\subsubsection{Ver Mis Cursos}
+
+\begin{enumerate}
+    \item Iniciar sesión como profesor
+    \item La vista principal muestra todos los cursos creados por el profesor
+    \item Cada tarjeta muestra:
+    \begin{itemize}
+        \item Título del curso
+        \item Descripción
+        \item Número de módulos
+        \item Botones de acción (Módulos, Editar, Eliminar)
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Crear Nuevo Curso}
+
+\begin{enumerate}
+    \item Hacer clic en el botón ``Crear Nuevo Curso'' (+)
+    \item Completar el formulario:
+    \begin{itemize}
+        \item \textbf{Título del Curso:} Nombre descriptivo (ej: ``Introducción a JavaScript'')
+        \item \textbf{Descripción:} Explicación detallada del contenido y objetivos
+    \end{itemize}
+    \item Hacer clic en ``Crear Curso''
+    \item El sistema crea el curso y redirige automáticamente a la gestión de módulos
+\end{enumerate}
+
+\begin{successbox}{Flujo de Creación}
+Después de crear un curso, el siguiente paso es agregar módulos con videos. El sistema te lleva automáticamente a la vista de gestión de módulos.
+\end{successbox}
+
+\subsubsection{Gestionar Módulos de un Curso}
+
+\paragraph{Agregar Módulo}
+
+\begin{enumerate}
+    \item Desde la lista de cursos, hacer clic en ``Módulos''
+    \item Hacer clic en el botón ``Agregar Módulo''
+    \item Completar el formulario:
+    \begin{itemize}
+        \item \textbf{Título:} Nombre del módulo (ej: ``Variables y Tipos de Datos'')
+        \item \textbf{Descripción:} Explicación del contenido del módulo
+        \item \textbf{Video:} Seleccionar de la lista de videos disponibles
+        \item \textbf{Orden:} Posición del módulo en la secuencia (1, 2, 3...)
+    \end{itemize}
+    \item Hacer clic en ``Guardar''
+    \item El módulo aparece en la lista del curso
+\end{enumerate}
+
+\begin{infobox}{Ordenamiento de Módulos}
+El campo ``Orden'' determina la secuencia en que los estudiantes verán los módulos. Es recomendable usar números consecutivos (1, 2, 3...) aunque el sistema acepta cualquier número entero.
+\end{infobox}
+
+\paragraph{Editar Módulo}
+
+\begin{enumerate}
+    \item En la lista de módulos, hacer clic en el icono de editar
+    \item Modificar los campos deseados
+    \item Hacer clic en ``Guardar Cambios''
+\end{enumerate}
+
+\paragraph{Eliminar Módulo}
+
+\begin{enumerate}
+    \item En la lista de módulos, hacer clic en el icono de eliminar
+    \item Confirmar la eliminación
+    \item El módulo es removido del curso
+\end{enumerate}
+
+\begin{warningbox}{Eliminar Módulos}
+Al eliminar un módulo, también se elimina todo el progreso que los estudiantes hayan registrado en ese módulo.
+\end{warningbox}
+
+\paragraph{Reordenar Módulos}
+
+Para cambiar el orden de los módulos:
+
+\begin{enumerate}
+    \item Editar el módulo que deseas mover
+    \item Cambiar el valor del campo ``Orden''
+    \item Guardar los cambios
+    \item Los módulos se reorganizan automáticamente
+\end{enumerate}
+
+\subsubsection{Editar Curso}
+
+\begin{enumerate}
+    \item Desde la lista de cursos, hacer clic en el icono de editar
+    \item Modificar el título y/o descripción
+    \item Hacer clic en ``Guardar Cambios''
+\end{enumerate}
+
+\subsubsection{Eliminar Curso}
+
+\begin{enumerate}
+    \item Desde la lista de cursos, hacer clic en el icono de eliminar
+    \item Confirmar la eliminación en el diálogo
+    \item El curso y todos sus módulos son eliminados permanentemente
+\end{enumerate}
+
+\begin{warningbox}{Eliminación de Cursos}
+Esta acción elimina:
+\begin{itemize}
+    \item El curso
+    \item Todos los módulos asociados
+    \item Todas las inscripciones de estudiantes
+    \item Todo el progreso registrado
+\end{itemize}
+Esta acción NO puede deshacerse.
+\end{warningbox}
+
+\subsection{Rol: Estudiante}
+
+Los estudiantes pueden explorar cursos, inscribirse y realizar seguimiento de su aprendizaje.
+
+\subsubsection{Explorar Cursos Disponibles}
+
+\begin{enumerate}
+    \item Iniciar sesión como estudiante
+    \item Hacer clic en ``Explorar Cursos'' en el menú
+    \item Se muestra el catálogo completo de cursos
+    \item Cada tarjeta muestra:
+    \begin{itemize}
+        \item Título del curso
+        \item Descripción
+        \item Profesor que lo imparte
+        \item Número de módulos
+        \item Estado de inscripción
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Inscribirse a un Curso}
+
+\begin{enumerate}
+    \item Navegar al catálogo de cursos
+    \item Localizar el curso deseado
+    \item Hacer clic en el botón ``Inscribirse''
+    \item El sistema confirma la inscripción
+    \item El curso aparece en ``Mis Cursos''
+\end{enumerate}
+
+\begin{successbox}{Inscripción Instantánea}
+La inscripción es inmediata y gratuita. Una vez inscrito, tienes acceso completo a todos los módulos del curso.
+\end{successbox}
+
+\subsubsection{Ver Mis Cursos}
+
+\begin{enumerate}
+    \item Hacer clic en ``Mis Cursos'' en el menú
+    \item Se muestran todos los cursos en los que estás inscrito
+    \item Para cada curso se muestra:
+    \begin{itemize}
+        \item Título y descripción
+        \item Barra de progreso general
+        \item Módulos completados / Total de módulos
+        \item Badge de ``Completado'' si finalizaste el curso
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Ver Contenido de un Curso}
+
+\begin{enumerate}
+    \item Desde ``Mis Cursos'', hacer clic en ``Ver Curso''
+    \item La interfaz se divide en dos paneles:
+    \begin{itemize}
+        \item \textbf{Panel Izquierdo:} Lista de módulos con indicadores de estado
+        \item \textbf{Panel Derecho:} Reproductor de video
+    \end{itemize}
+\end{enumerate}
+
+\paragraph{Indicadores de Estado de Módulos}
+
+\begin{itemize}
+    \item \textbf{Círculo verde con check (✓):} Módulo completado
+    \item \textbf{Círculo azul con play (▶):} Módulo actual
+    \item \textbf{Círculo gris vacío (○):} Módulo no iniciado
+\end{itemize}
+
+\subsubsection{Reproducir Videos}
+
+\begin{enumerate}
+    \item Hacer clic en un módulo de la lista
+    \item El video se carga automáticamente en el reproductor
+    \item Usar los controles del reproductor:
+    \begin{itemize}
+        \item \textbf{Play/Pausa:} Iniciar o pausar el video
+        \item \textbf{Barra de progreso:} Saltar a cualquier parte del video
+        \item \textbf{Volumen:} Ajustar el nivel de audio
+        \item \textbf{Pantalla completa:} Ver el video a pantalla completa
+    \end{itemize}
+\end{enumerate}
+
+\begin{infobox}{Seguimiento Automático}
+El sistema guarda automáticamente tu progreso cada 5 segundos. Puedes cerrar el navegador y al volver, el video continuará desde donde lo dejaste.
+\end{infobox}
+
+\subsubsection{Completar Módulos}
+
+El sistema marca automáticamente un módulo como completado cuando:
+
+\begin{enumerate}
+    \item Has visto al menos el 90\% del video, O
+    \item Has llegado al final del video
+\end{enumerate}
+
+Al completar un módulo:
+\begin{itemize}
+    \item El icono cambia a check verde (✓)
+    \item La barra de progreso del curso se actualiza
+    \item Puedes continuar con el siguiente módulo
+\end{itemize}
+
+\subsubsection{Completar un Curso}
+
+Cuando completas el último módulo de un curso:
+
+\begin{enumerate}
+    \item Aparece un diálogo de felicitaciones con un trofeo dorado
+    \item El mensaje indica que has completado exitosamente el curso
+    \item En ``Mis Cursos'' aparece el badge de ``Completado''
+    \item La barra de progreso muestra 100\%
+\end{enumerate}
+
+\begin{successbox}{¡Felicidades!}
+Los cursos completados permanecen en ``Mis Cursos'' y puedes revisarlos en cualquier momento para refrescar los conocimientos.
+\end{successbox}
+
+% ==========================================
+% PARTE 4: ADMINISTRACIÓN Y MANTENIMIENTO
+% ==========================================
+
+\section{Administración y Mantenimiento}
+
+\subsection{Acceso SSH al Servidor}
+
+Para administrar el servidor EC2:
+
+\begin{lstlisting}[language=bash, caption=Conexión SSH]
+# Desde Windows PowerShell
+ssh -i "ruta/a/elearning-key.pem" ubuntu@3.133.208.222
+
+# Ejemplo con ruta completa:
+ssh -i "C:\Users\usuario\Downloads\elearning-key.pem" ubuntu@3.133.208.222
+\end{lstlisting}
+
+\subsection{Monitoreo del Sistema}
+
+\subsubsection{Verificar Estado del Backend}
+
+\begin{lstlisting}[language=bash, caption=Comandos de monitoreo]
+# Ver estado de PM2
+pm2 status
+
+# Ver logs en tiempo real
+pm2 logs backend
+
+# Ver logs de las ultimas 100 lineas
+pm2 logs backend --lines 100
+
+# Ver informacion detallada
+pm2 show backend
+\end{lstlisting}
+
+\subsubsection{Verificar Estado de Nginx}
+
+\begin{lstlisting}[language=bash, caption=Comandos de Nginx]
+# Estado del servicio
+sudo systemctl status nginx
+
+# Ver logs de error
+sudo tail -f /var/log/nginx/error.log
+
+# Ver logs de acceso
+sudo tail -f /var/log/nginx/access.log
+
+# Reiniciar Nginx
+sudo systemctl restart nginx
+\end{lstlisting}
+
+\subsubsection{Verificar Base de Datos}
+
+\begin{lstlisting}[language=bash, caption=Conexión a PostgreSQL]
+# Conectar a la base de datos desde el servidor
+psql -h elearning-dani-db.XXXXX.us-east-2.rds.amazonaws.com \
+     -U tu-usuario \
+     -d elearning-dani-db
+
+# Ver tablas
+\dt
+
+# Ver usuarios
+SELECT id, name, email, role FROM users;
+
+# Ver cursos
+SELECT id, title, teacher_id FROM courses;
+\end{lstlisting}
+
+\subsection{Respaldos de Base de Datos}
+
+\subsubsection{Crear Respaldo Manual}
+
+\begin{lstlisting}[language=bash, caption=Backup de PostgreSQL]
+# Crear backup completo
+pg_dump -h elearning-dani-db.XXXXX.us-east-2.rds.amazonaws.com \
+        -U tu-usuario \
+        -d elearning-dani-db \
+        -F c \
+        -f backup-$(date +%Y%m%d).dump
+
+# Comprimir backup
+gzip backup-$(date +%Y%m%d).dump
+\end{lstlisting}
+
+\subsubsection{Restaurar desde Respaldo}
+
+\begin{lstlisting}[language=bash, caption=Restore de PostgreSQL]
+# Restaurar backup
+pg_restore -h elearning-dani-db.XXXXX.us-east-2.rds.amazonaws.com \
+           -U tu-usuario \
+           -d elearning-dani-db \
+           backup-20251103.dump
+\end{lstlisting}
+
+\begin{warningbox}{Respaldos Automáticos}
+AWS RDS realiza respaldos automáticos diarios. Se recomienda configurar una ventana de respaldo durante horas de bajo tráfico (ej: 3:00 AM).
+\end{warningbox}
+
+\subsection{Actualización del Sistema}
+
+\subsubsection{Actualizar Backend}
+
+\begin{lstlisting}[language=bash, caption=Actualizar código del backend]
+# Conectar por SSH
+ssh -i "elearning-key.pem" ubuntu@IP-EC2
+
+# Ir al directorio del proyecto
+cd /home/ubuntu/plataforma-elearning
+
+# Obtener cambios
+git pull origin main
+
+# Instalar dependencias actualizadas
+cd backend
+npm install
+
+# Reiniciar PM2
+pm2 restart backend
+\end{lstlisting}
+
+\subsubsection{Actualizar Frontend}
+
+\begin{lstlisting}[language=bash, caption=Actualizar código del frontend]
+# Desde el servidor EC2
+cd /home/ubuntu/plataforma-elearning/frontend
+
+# Obtener cambios
+git pull origin main
+
+# Instalar dependencias
+npm install
+
+# Construir nueva version
+npm run build
+
+# Reiniciar Nginx
+sudo systemctl restart nginx
+\end{lstlisting}
+
+\subsection{Gestión del Servidor de Videos}
+
+\subsubsection{Agregar Nuevos Videos}
+
+\begin{enumerate}
+    \item Copiar los archivos MP4 a: \texttt{C:\textbackslash Users\textbackslash danil\textbackslash Videos\textbackslash Captures}
+    \item Los videos estarán disponibles automáticamente en el dropdown de selección
+    \item No es necesario reiniciar el servidor
+\end{enumerate}
+
+\subsubsection{Verificar Cloudflare Tunnel}
+
+\begin{lstlisting}[language=bash, caption=Comandos de Cloudflare Tunnel (Windows)]
+# Ver estado del servicio
+cloudflared service status
+
+# Iniciar servicio
+cloudflared service start
+
+# Detener servicio
+cloudflared service stop
+
+# Ver logs
+cloudflared tail elearning-videos
+\end{lstlisting}
+
+\subsection{Solución de Problemas Comunes}
+
+\subsubsection{Error 500 en el Backend}
+
+\textbf{Síntomas:} Errores al cargar datos o crear recursos
+
+\textbf{Solución:}
+\begin{enumerate}
+    \item Verificar logs: \texttt{pm2 logs backend}
+    \item Verificar conexión a RDS
+    \item Reiniciar el backend: \texttt{pm2 restart backend}
+\end{enumerate}
+
+\subsubsection{Videos No Cargan}
+
+\textbf{Síntomas:} El reproductor muestra error al intentar reproducir
+
+\textbf{Solución:}
+\begin{enumerate}
+    \item Verificar que el servidor de videos esté corriendo: \texttt{http://localhost:8080/health}
+    \item Verificar estado de Cloudflare Tunnel: \texttt{cloudflared service status}
+    \item Reiniciar el túnel si es necesario
+    \item Verificar que el archivo de video exista en la carpeta
+\end{enumerate}
+
+\subsubsection{Frontend No Carga}
+
+\textbf{Síntomas:} Página en blanco o error 404
+
+\textbf{Solución:}
+\begin{enumerate}
+    \item Verificar estado de Nginx: \texttt{sudo systemctl status nginx}
+    \item Verificar que los archivos existan: \texttt{ls /home/ubuntu/plataforma-elearning/frontend/dist}
+    \item Verificar configuración de Nginx: \texttt{sudo nginx -t}
+    \item Revisar logs: \texttt{sudo tail -f /var/log/nginx/error.log}
+\end{enumerate}
+
+\subsubsection{Error de Autenticación}
+
+\textbf{Síntomas:} Error 401 al iniciar sesión
+
+\textbf{Solución:}
+\begin{enumerate}
+    \item Verificar que las credenciales sean correctas
+    \item Resetear contraseñas ejecutando: \texttt{node seed.js}
+    \item Verificar variable de entorno \texttt{JWT\_SECRET} en el backend
+\end{enumerate}
+
+\subsection{Métricas y Rendimiento}
+
+\subsubsection{Monitoreo de CPU y Memoria}
+
+\begin{lstlisting}[language=bash, caption=Comandos de monitoreo]
+# Ver uso de recursos
+top
+
+# Ver uso de memoria
+free -h
+
+# Ver uso de disco
+df -h
+
+# Monitoreo detallado de PM2
+pm2 monit
+\end{lstlisting}
+
+\subsubsection{Optimización de Consultas SQL}
+
+Las consultas lentas son registradas automáticamente en los logs cuando superan 1 segundo:
+
+\begin{lstlisting}[language=bash]
+# Ver consultas lentas en logs
+pm2 logs backend | grep "Query lenta"
+\end{lstlisting}
+
+\subsection{Seguridad}
+
+\subsubsection{Recomendaciones de Seguridad}
+
+\begin{enumerate}
+    \item \textbf{Cambiar contraseñas por defecto} inmediatamente en producción
+    \item \textbf{Usar HTTPS} para todas las comunicaciones (configurar Let's Encrypt)
+    \item \textbf{Restringir acceso SSH} solo a IPs conocidas
+    \item \textbf{Actualizar dependencias} regularmente: \texttt{npm audit fix}
+    \item \textbf{Configurar firewall} para limitar puertos expuestos
+    \item \textbf{Habilitar autenticación de dos factores} en AWS
+    \item \textbf{Rotar secretos JWT} periódicamente
+    \item \textbf{Monitorear logs} en busca de actividad sospechosa
+\end{enumerate}
+
+\subsubsection{Configurar SSL con Let's Encrypt}
+
+\begin{lstlisting}[language=bash, caption=Instalación de Certbot]
+# Instalar Certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obtener certificado
+sudo certbot --nginx -d tu-dominio.com
+
+# El certificado se renueva automaticamente
+# Verificar renovacion:
+sudo certbot renew --dry-run
+\end{lstlisting}
+
+% ==========================================
+% PARTE 5: ANEXOS
+% ==========================================
+
+\section{Anexos}
+
+\subsection{Variables de Entorno}
+
+\subsubsection{Backend (.env)}
+
+\begin{lstlisting}[caption=Archivo .env del backend]
+# Base de datos
+DB_HOST=elearning-dani-db.XXXXX.us-east-2.rds.amazonaws.com
+DB_PORT=5432
+DB_NAME=elearning-dani-db
+DB_USER=tu-usuario
+DB_PASSWORD=tu-password-seguro
+
+# JWT
+JWT_SECRET=clave-secreta-muy-segura-cambiarla
+JWT_EXPIRES_IN=7d
+
+# Servidor
+PORT=5000
+NODE_ENV=production
+
+# Video Server
+VIDEO_SERVER_URL=https://videos.tudominio.com
+\end{lstlisting}
+
+\subsubsection{Frontend (.env.production)}
+
+\begin{lstlisting}[caption=Archivo .env.production del frontend]
+VITE_API_URL=http://3.133.208.222:5000
+VITE_VIDEO_SERVER_URL=https://tu-tunnel.trycloudflare.com
+\end{lstlisting}
+
+\subsection{Endpoints de la API}
+
+\subsubsection{Autenticación}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Método} & \textbf{Endpoint} & \textbf{Descripción} \\ \hline
+POST & /api/auth/register & Registrar nuevo usuario \\ \hline
+POST & /api/auth/login & Iniciar sesión \\ \hline
+GET & /api/auth/profile & Obtener perfil del usuario autenticado \\ \hline
+\end{tabular}
+\caption{Endpoints de autenticación}
+\end{table}
+
+\subsubsection{Usuarios}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Método} & \textbf{Endpoint} & \textbf{Descripción} \\ \hline
+GET & /api/users & Listar todos los usuarios (Admin) \\ \hline
+POST & /api/users & Crear usuario (Admin) \\ \hline
+PUT & /api/users/:id & Actualizar usuario (Admin) \\ \hline
+DELETE & /api/users/:id & Eliminar usuario (Admin) \\ \hline
+\end{tabular}
+\caption{Endpoints de usuarios}
+\end{table}
+
+\subsubsection{Cursos}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{5.5cm}|}
+\hline
+\textbf{Método} & \textbf{Endpoint} & \textbf{Descripción} \\ \hline
+GET & /api/courses & Listar todos los cursos \\ \hline
+GET & /api/courses/:id & Obtener curso por ID \\ \hline
+POST & /api/courses & Crear curso (Profesor) \\ \hline
+PUT & /api/courses/:id & Actualizar curso (Profesor) \\ \hline
+DELETE & /api/courses/:id & Eliminar curso (Profesor) \\ \hline
+GET & /api/courses/enrolled & Cursos inscritos (Estudiante) \\ \hline
+\end{tabular}
+\caption{Endpoints de cursos}
+\end{table}
+
+\subsubsection{Módulos}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{5.5cm}|}
+\hline
+\textbf{Método} & \textbf{Endpoint} & \textbf{Descripción} \\ \hline
+GET & /api/modules/course/:id & Listar módulos de un curso \\ \hline
+GET & /api/modules/:id & Obtener módulo por ID \\ \hline
+POST & /api/modules & Crear módulo (Profesor) \\ \hline
+PUT & /api/modules/:id & Actualizar módulo (Profesor) \\ \hline
+DELETE & /api/modules/:id & Eliminar módulo (Profesor) \\ \hline
+\end{tabular}
+\caption{Endpoints de módulos}
+\end{table}
+
+\subsubsection{Progreso}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{5cm}|}
+\hline
+\textbf{Método} & \textbf{Endpoint} & \textbf{Descripción} \\ \hline
+GET & /api/progress/module/:id & Obtener progreso de módulo \\ \hline
+POST & /api/progress & Actualizar progreso \\ \hline
+POST & /api/progress/module/:id/complete & Marcar módulo completo \\ \hline
+\end{tabular}
+\caption{Endpoints de progreso}
+\end{table}
+
+\subsubsection{Inscripciones}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{5.5cm}|}
+\hline
+\textbf{Método} & \textbf{Endpoint} & \textbf{Descripción} \\ \hline
+POST & /api/enrollments & Inscribirse a curso (Estudiante) \\ \hline
+DELETE & /api/enrollments/:id & Cancelar inscripción \\ \hline
+GET & /api/enrollments/check/:id & Verificar inscripción \\ \hline
+\end{tabular}
+\caption{Endpoints de inscripciones}
+\end{table}
+
+\subsection{Glosario de Términos}
+
+\begin{description}
+    \item[API REST] Interfaz de programación que permite la comunicación entre el frontend y backend mediante HTTP
+    \item[AWS EC2] Servicio de computación en la nube de Amazon Web Services
+    \item[AWS RDS] Servicio de base de datos relacional administrada de AWS
+    \item[Backend] Servidor que procesa la lógica de negocio y gestiona los datos
+    \item[Cloudflare Tunnel] Servicio que expone aplicaciones locales a internet de forma segura
+    \item[Frontend] Interfaz gráfica que los usuarios ven e interactúan
+    \item[JWT] JSON Web Token, método de autenticación mediante tokens
+    \item[Módulo] Unidad de contenido dentro de un curso, contiene un video
+    \item[Nginx] Servidor web y proxy inverso de alto rendimiento
+    \item[PM2] Gestor de procesos para aplicaciones Node.js en producción
+    \item[PostgreSQL] Sistema de gestión de bases de datos relacional
+    \item[React] Biblioteca de JavaScript para construir interfaces de usuario
+    \item[Streaming] Transmisión de video por fragmentos sin necesidad de descarga completa
+\end{description}
+
+\subsection{Acceso a la Plataforma}
+
+\begin{infobox}{Información de Acceso}
+\begin{itemize}
+    \item \textbf{URL:} http://3.133.208.222
+    \item \textbf{API Backend:} http://3.133.208.222:5000
+    \item \textbf{Estado del Servidor:} http://3.133.208.222:5000/health
+\end{itemize}
+\end{infobox}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Rol} & \textbf{Email} & \textbf{Contraseña} \\ \hline
+Estudiante & student@elearning.com & 123456 \\ \hline
+Profesor & teacher@elearning.com & 123456 \\ \hline
+Administrador & admin@elearning.com & 123456 \\ \hline
+\end{tabular}
+\caption{Credenciales de acceso para evaluación}
+\end{table}
+
+\subsection{Contacto y Soporte}
+
+Para soporte técnico o consultas sobre la plataforma:
+
+\begin{itemize}
+    \item \textbf{Universidad:} Universidad Pontificia Bolivariana
+    \item \textbf{Facultad:} Ingeniería de Sistemas
+    \item \textbf{Curso:} Aplicaciones con Redes
+    \item \textbf{Periodo:} Sexto Semestre - 2025
+\end{itemize}
+
+\subsection{Historial de Versiones}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|p{7cm}|}
+\hline
+\textbf{Versión} & \textbf{Fecha} & \textbf{Cambios} \\ \hline
+1.0 & Nov 2025 & Versión inicial del sistema completo \\ \hline
+\end{tabular}
+\caption{Historial de versiones}
+\end{table}
+
+% ==========================================
+% FIN DEL DOCUMENTO
+% ==========================================
+
+\newpage
+\section*{Conclusión}
+
+La Plataforma eLearning representa una solución completa y escalable para la gestión de cursos en línea. Implementada con tecnologías modernas y desplegada en infraestructura cloud de AWS, el sistema ofrece:
+
+\begin{itemize}
+    \item \textbf{Escalabilidad:} Arquitectura preparada para crecer según la demanda
+    \item \textbf{Seguridad:} Autenticación JWT, cifrado SSL/TLS, y buenas prácticas de seguridad
+    \item \textbf{Usabilidad:} Interfaz intuitiva con Material-UI
+    \item \textbf{Rendimiento:} Streaming eficiente de videos mediante Cloudflare Tunnel
+    \item \textbf{Mantenibilidad:} Código modular y bien documentado
+\end{itemize}
+
+El sistema está listo para ser utilizado en ambientes educativos reales y puede ser extendido con funcionalidades adicionales según las necesidades específicas de cada institución.
+
+\vfill
+
+\begin{center}
+\large
+\textbf{Plataforma eLearning v1.0}\\
+Universidad Pontificia Bolivariana\\
+Noviembre 2025
+\end{center}
+
+\end{document}

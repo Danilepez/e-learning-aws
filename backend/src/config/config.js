@@ -23,7 +23,11 @@ const config = {
   },
   
   cors: {
-    origins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+    origins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'http://localhost:5173',
+      'http://3.133.208.222',
+      'http://3.133.208.222:80'
+    ],
   },
 };
 
